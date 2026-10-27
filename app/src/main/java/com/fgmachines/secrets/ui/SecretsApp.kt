@@ -58,7 +58,19 @@ internal val LocalArabic = staticCompositionLocalOf { true }
     val route = entry?.destination?.route ?: "home"
     val root = route in listOf("home", "industries", "favorites", "tools")
     CompositionLocalProvider(LocalArabic provides (language == "ar"), LocalLayoutDirection provides if (language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr) {
-        MaterialTheme(colorScheme = darkColorScheme(primary = Blue, secondary = Gold, background = Black, surface = Color(0xFF141A24), onSurface = Color(0xFFF1F4FA), onBackground = Color.White, error = Red)) {
+        MaterialTheme(colorScheme = darkColorScheme(
+            primary = Blue, onPrimary = Black, primaryContainer = Color(0xFF14364D), onPrimaryContainer = Color(0xFFD8EDFF),
+            secondary = Gold, onSecondary = Black, secondaryContainer = Color(0xFF12384F), onSecondaryContainer = Blue,
+            tertiary = Green, onTertiary = Black, tertiaryContainer = Color(0xFF103A26), onTertiaryContainer = Green,
+            background = Black, onBackground = Color(0xFFF1F4FA), surface = Color(0xFF141A24), onSurface = Color(0xFFF1F4FA),
+            surfaceVariant = Color(0xFF202936), onSurfaceVariant = Silver, surfaceTint = Blue,
+            inverseSurface = Silver, inverseOnSurface = Black, inversePrimary = Color(0xFF005A85),
+            error = Red, onError = Black, errorContainer = Color(0xFF4A1C26), onErrorContainer = Color(0xFFFFDADF),
+            outline = Silver, outlineVariant = Color(0xFF414C5B), scrim = Black,
+            surfaceDim = Black, surfaceBright = Color(0xFF202936), surfaceContainerLowest = Black,
+            surfaceContainerLow = Color(0xFF101620), surfaceContainer = Color(0xFF141A24),
+            surfaceContainerHigh = Color(0xFF1C2633), surfaceContainerHighest = Color(0xFF253246)
+        )) {
             pendingPack?.let { pack -> AlertDialog(onDismissRequest = vm::cancelImport,
                 title = { Text(tr("استيراد حزمة عناوين", "Import topic pack")) },
                 text = { Text(tr("${pack.size} بندًا غير محقق. سيتم تحديث الأرقام المتطابقة وإضافة الجديدة مع الاحتفاظ بالمفضلة. اختر الحزم من مصدر تعرفه؛ نجاح الاستيراد لا يثبت صحة المحتوى.", "${pack.size} unverified records. Matching IDs will be updated, new IDs added, and favorites retained. Use a known source; successful import does not validate content.")) },
@@ -71,7 +83,7 @@ internal val LocalArabic = staticCompositionLocalOf { true }
                 } }, navigationIcon = { if (!root) IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, tr("رجوع", "Back"), tint = Blue) } }) },
                 bottomBar = { if (root) NavigationBar {
                     val destinations = listOf(Triple("home", tr("الرئيسية", "Home"), Icons.Default.Home), Triple("industries", tr("الصناعات", "Industries"), Icons.Default.Build), Triple("favorites", tr("المفضلة", "Favorites"), Icons.Default.Star), Triple("tools", tr("المزيد", "More"), Icons.Default.Settings))
-                    destinations.forEach { (path, title, icon) -> NavigationBarItem(selected = route == path, onClick = { if (route != path) nav.navigate(path) { popUpTo("home") { saveState = true }; launchSingleTop = true; restoreState = true } }, icon = { Icon(icon, null) }, label = { Text(title) }) }
+                    destinations.forEach { (path, title, icon) -> NavigationBarItem(selected = route == path, onClick = { if (route != path) nav.navigate(path) { popUpTo("home") { saveState = true }; launchSingleTop = true; restoreState = true } }, icon = { Icon(icon, null, tint = if (route == path) Blue else Silver) }, label = { Text(title, color = if (route == path) Blue else Silver) }) }
                 } }
             ) { padding ->
                 Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF152134), Black, Black))).padding(padding)) {
