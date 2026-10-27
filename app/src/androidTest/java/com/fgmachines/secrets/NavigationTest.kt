@@ -1,6 +1,8 @@
 package com.fgmachines.secrets
 
 import android.graphics.Bitmap
+import android.content.ContentValues
+import android.provider.MediaStore
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.compose.ui.test.*
@@ -8,17 +10,25 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
+@androidx.test.filters.SdkSuppress(minSdkVersion = 29)
 class NavigationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private fun screenshot(name: String) {
         compose.waitForIdle()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val directory = File(instrumentation.targetContext.getExternalFilesDir(null), "screenshots").apply { mkdirs() }
+        val resolver = instrumentation.targetContext.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "$name.png")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/FG-Secrets")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: error("Screenshot destination unavailable")
         val bitmap = instrumentation.uiAutomation.takeScreenshot() ?: error("Screenshot unavailable")
-        File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        resolver.openOutputStream(uri)!!.use { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         bitmap.recycle()
+        resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
     }
     private fun scrollTo(text: String): SemanticsNodeInteraction {
         compose.onNodeWithTag("page").performScrollToNode(hasText(text))
