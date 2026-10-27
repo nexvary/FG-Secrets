@@ -37,7 +37,7 @@ object FormulationCalculator {
         require(batch.positive()) { "Batch must be positive" }
         require(percentages.isNotEmpty() && percentages.all { it.nonNegative() && it <= HUNDRED }) { "Invalid percentages" }
         require(percentages.fold(BigDecimal.ZERO, BigDecimal::add).compareTo(HUNDRED) == 0) { "Percentages must total 100" }
-        return percentages.map { batch.multiply(unit.grams).multiply(it).divide(HUNDRED.multiply(output.grams), 12, RoundingMode.HALF_UP).stripTrailingZeros() }
+        return percentages.map { batch.multiply(unit.grams).multiply(it).divide(HUNDRED.multiply(output.grams)).stripTrailingZeros() }
     }
     fun scaleVerified(formulation: Formulation, batch: BigDecimal, unit: MassUnit): List<BigDecimal> {
         require(formulation.mayPublish()) { "Formulation requires evidence and safety review" }

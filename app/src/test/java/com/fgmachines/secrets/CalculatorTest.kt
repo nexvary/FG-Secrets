@@ -15,6 +15,11 @@ class CalculatorTest {
         val amounts = FormulationCalculator.scale(listOf(d("33.33"), d("66.67")), d("3"))
         equal("0.9999", amounts[0]); equal("2.0001", amounts[1]); equal("3", amounts.reduce(BigDecimal::add))
     }
+    @Test fun exactScalingDoesNotLoseTinyComponentsDuringUnitConversion() {
+        val parts = FormulationCalculator.scale(listOf(d("0.00000001"), d("99.99999999")), d("1.00000001"), MassUnit.GRAM, MassUnit.TONNE)
+        equal("0.000000000000000100000001", parts[0])
+        equal("0.00000100000001", parts.reduce(BigDecimal::add))
+    }
     @Test fun convertsMassUnits() { equal("250000", FormulationCalculator.scale(listOf(d("25"), d("75")), d("1"), MassUnit.TONNE, MassUnit.GRAM)[0]) }
     @Test fun rejectsInvalidFormulations() {
         listOf(emptyList(), listOf(d("99.999")), listOf(d("101"), d("-1"))).forEach { rejects { FormulationCalculator.scale(it, d("1")) } }
