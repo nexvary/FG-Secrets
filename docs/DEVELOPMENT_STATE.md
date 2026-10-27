@@ -1,3 +1,38 @@
+# Current product correction — 2026-10-27
+
+Owner clarification supersedes the original text-first product direction.
+The essential experience is: category → industry → infographic image → save/share,
+with a written description beneath the image. Owner DOCs supply industry names
+only; their text is not the public educational content.
+
+## Current change
+- New category-led visual home and industry catalog.
+- Two source-referenced educational images: industrial grease and hot melt.
+- Images rendered offline with Android Arabic text shaping and measured height.
+- PNG save through Android document picker; image sharing through a restricted
+  FileProvider cache directory with temporary read grants. No storage permission.
+- Pinch magnification, written accessible duplicate text and source links.
+- Original document transcriptions retained in data for provenance but removed
+  from public industry detail screens; unsupported titles marked in preparation.
+- Original 71 IDs retained; old topic favorites remain navigable.
+- Categories include adhesives, oils/greases, perfumes, metal care and insulation.
+  Perfume and metal-care content is explicitly not published yet.
+
+## Validation for this change
+Pending CI and emulator execution. The previous version's passing checks below
+do not verify this redesign. Do not present the previous APK as the corrected app.
+Save/share system-picker round trips and visual image quality need runtime review.
+Only two educational images exist; no complete manufacturing recipes are claimed.
+
+## Next work
+Inspect CI for this commit; correct failures; review actual screenshots and image
+exports, then expand the reviewed visual content, particularly wood/leather/book
+glues, perfumes and metal care. Do not recreate source-document paragraphs as
+educational articles.
+
+---
+
+# Previous release evidence (historical)
 # FG Secrets — verified engineering checkpoint
 Date: 2026-10-27
 Branch: feature/industrial-catalog-foundation

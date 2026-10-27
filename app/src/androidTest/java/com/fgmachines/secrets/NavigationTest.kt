@@ -40,7 +40,7 @@ class NavigationTest {
     }
     private fun back() { compose.onNodeWithContentDescription("رجوع").performClick() }
     @Test fun landscapeAndLargerTextRemainNavigable() {
-        compose.waitUntil(15000) { compose.onAllNodesWithText("النتائج: 71").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15000) { compose.onAllNodesWithText("الصناعة في صورة").fetchSemanticsNodes().isNotEmpty() }
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         try {
             instrumentation.uiAutomation.executeShellCommand("settings put system font_scale 1.3").close()
@@ -56,17 +56,18 @@ class NavigationTest {
         }
     }
     @Test fun searchFavoriteNavigationCalculatorsAndLanguage() {
-        compose.waitUntil(15000) { compose.onAllNodesWithText("النتائج: 71").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15000) { compose.onAllNodesWithText("الصناعة في صورة").fetchSemanticsNodes().isNotEmpty() }
         screenshot("01-home-ar")
-        compose.onNodeWithText("ابحث بالاسم أو المصطلح أو الرقم").performTextInput("ADH-001")
-        scrollTo("النتائج: 1").assertIsDisplayed()
-        scrollTo("تصنيع غراء المكبس").performClick()
-        scrollTo("النص الأصلي المنقول").assertIsDisplayed()
+        compose.onNodeWithText("ابحث عن صناعة").performTextInput("الشحوم")
+        scrollTo("الشحوم الصناعية").performClick()
+        scrollTo("وصف الصناعة").assertIsDisplayed()
         screenshot("02-topic-ar")
         scrollTo("حفظ في المفضلة").performClick()
+        scrollTo("حفظ الصورة").assertIsDisplayed()
+        scrollTo("مشاركة الصورة").assertIsDisplayed()
         back()
         compose.onNodeWithText("المفضلة", useUnmergedTree = true).performClick()
-        compose.onNodeWithText("تصنيع غراء المكبس").assertExists()
+        compose.onNodeWithText("الشحوم الصناعية").assertExists()
         screenshot("03-favorites-ar")
         compose.onNodeWithText("المزيد", useUnmergedTree = true).performClick()
         screenshot("04-tools-ar")

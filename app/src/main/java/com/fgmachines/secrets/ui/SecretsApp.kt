@@ -90,9 +90,9 @@ internal val LocalArabic = staticCompositionLocalOf { true }
                     if (error) { Text(tr("تعذر تحميل أو حفظ البيانات. حاول مجددًا.", "Could not load or save data. Try again."), color = Red, modifier = Modifier.padding(12.dp)); TextButton(onClick = vm::reload) { Text(tr("إعادة المحاولة", "Retry")) } }
                     if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
                     NavHost(navController = nav, startDestination = "home", modifier = Modifier.weight(1f)) {
-                        composable("home") { CatalogScreen(topics, favorites, home = true, onTopic = { nav.navigate("topic/$it") }, onFavorite = vm::favorite, onTools = { nav.navigate("tools") }) }
-                        composable("industries") { CatalogScreen(topics, favorites, home = false, onTopic = { nav.navigate("topic/$it") }, onFavorite = vm::favorite, onTools = { nav.navigate("tools") }) }
-                        composable("favorites") { FavoritesScreen(topics, favorites, { nav.navigate("topic/$it") }, vm::favorite) }
+                        composable("home") { VisualCatalog(topics) { nav.navigate("visual/$it") } }
+                        composable("industries") { VisualCatalog(topics) { nav.navigate("visual/$it") } }
+                        composable("favorites") { FavoritesScreen(topics, favorites, { id -> nav.navigate(if (visualIndustries.any { it.id == id }) "visual/$id" else "topic/$id") }, vm::favorite) }
                         composable("tools") { Page {
                             item { Heading(tr("أدوات الورشة والمكتبة", "Workshop tools & library")) }
                             item { MenuCard(tr("قاموس الخامات", "Raw materials dictionary"), tr("الأسماء العلمية والمصطلحات الملتبسة", "Scientific names and ambiguous terms"), Icons.Default.Search) { nav.navigate("dictionary") } }
@@ -104,6 +104,10 @@ internal val LocalArabic = staticCompositionLocalOf { true }
                         composable("topic/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { back ->
                             val topic = topics.find { it.id == back.arguments?.getString("id") }
                             if (topic == null) Page { item { Text(tr("الموضوع غير متاح حاليًا.", "Topic is currently unavailable.")) } } else TopicScreen(topic, favorites.contains(topic.id), { vm.favorite(topic.id, !favorites.contains(topic.id)) })
+                        }
+                        composable("visual/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { back ->
+                            val id = back.arguments?.getString("id").orEmpty()
+                            VisualIndustryScreen(id, id in favorites) { vm.favorite(id, id !in favorites) }
                         }
                         composable("dictionary") { DictionaryScreen(favorites, vm::favorite) }
                         composable("formulation") { FormulationScreen() }
@@ -153,29 +157,19 @@ internal val LocalArabic = staticCompositionLocalOf { true }
     Page {
         item { Heading(tr("المفضلة المحفوظة محليًا", "Saved on this device")) }
         if (favorites.isEmpty()) item { Text(tr("اضغط النجمة بجوار صناعة أو خامة لحفظها هنا.", "Tap the star on a topic or material to save it here.")) }
-        items(topics.filter { it.id in favorites }, key = { it.id }) { t -> TopicCard(t, true, { onTopic(t.id) }, { onFavorite(t.id, false) }) }
+        items(topics.filter { it.id in favorites && it.id !in visualIndustries.map { v -> v.id } }, key = { it.id }) { t -> TopicCard(t, true, { onTopic(t.id) }, { onFavorite(t.id, false) }) }
+        items(visualIndustries.filter { it.id in favorites }, key = { it.id }) { v ->
+            MenuCard(v.title, v.description, Icons.Default.Info) { onTopic(v.id) }
+            TextButton(onClick = { onFavorite(v.id, false) }) { Text(tr("إزالة من المفضلة", "Remove favorite")) }
+        }
         items(dictionary.filter { it.id in favorites }, key = { it.id }) { m -> MaterialCard(m, true, { onFavorite(m.id, false) }) }
     }
 }
 @Composable private fun TopicScreen(topic: Topic, favorite: Boolean, toggle: () -> Unit) {
     Page {
-        item { Heading(topic.name) }
-        item { Button(onClick = toggle) { Icon(Icons.Default.Star, null); Spacer(Modifier.width(8.dp)); Text(tr(if (favorite) "إزالة من المفضلة" else "حفظ في المفضلة", if (favorite) "Remove favorite" else "Save favorite")) } }
-        item { Panel(tr("حالة الموضوع", "Topic status"), tr("غير محقق — عنوان من قائمة مشروعات، وليس تركيبة مثبتة. الكلمات مثل «غير سام» أو «لجميع الأسطح» من المصدر ولا تؤكد صلاحية المنتج.", "Unverified source title, not a validated formulation. Claims in the source such as non-toxic or universal adhesion have not been verified."), Gold) }
-        item { Panel(tr("النص الأصلي المنقول", "Transcribed source text"), topic.originalText + if (topic.originalNotes.isNotBlank()) "\n${topic.originalNotes}" else "") }
-        item { Panel(tr("المصدر والتتبع", "Source provenance"), "${topic.source}\n${tr("البند", "Item")} ${topic.sourceItem}\n${tr("مراجعة النقل: 2026-10-27 — فواصل الأسطر وعلامات الاتجاه منسقة؛ المطابقة البصرية النهائية معلقة.", "Transcription reviewed: 2026-10-27. Line breaks and bidi markers normalized; final visual reconciliation is pending.")}") }
-        if (topic.id == "ADH-019" || topic.id == "ADH-010") {
-            item { Panel(tr("معلومة مرجعية عن الهوت ميلت", "Referenced hot melt overview"), tr("تُطبق اللواصق الحرارية في الحالة المنصهرة ويتكون الربط الأولي عند التبريد. بعض الأنواع التفاعلية تتصلب لاحقًا بتفاعل كيميائي. لا يحدد عنوان القائمة نوع البوليمر أو وصفة المنتج.", "Hot melt adhesives are applied molten and form an initial bond on cooling. Reactive types may subsequently cure chemically. The source title does not identify a polymer or a product formulation."), Green) }
-            item { ReferenceCard(hotMeltReference) }
-        }
-        knowledgeNotes[topic.id]?.forEach { note ->
-            item { Panel(tr(note.titleAr, note.titleEn), tr(note.textAr, note.textEn), Green) }
-            item { Text(tr("ملاحظة موثقة بمصدر منشور — لا تعني اختبار المنتج الوارد بالقائمة.", "Literature-referenced note — the source-list product has not been tested."), color = Green) }
-            item { ReferenceCard(note.reference) }
-        }
-        item { Panel(tr("المواد الخام والتركيبة", "Raw materials & formulation"), tr("لا توجد نسب موثقة لهذا البند بعد. لا تُستنتج الخامات أو النسب من العنوان.", "No documented percentages yet. Ingredients and ratios cannot be inferred from a title.")) }
-        item { Panel(tr("المراحل والمعدات والجودة", "Process, equipment & quality"), tr("لم تُراجع خطوات التصنيع والمعدات والخصائص والاختبارات والأخطاء الشائعة لهذا المنتج. يلزم مرجع فني محدد قبل نشرها.", "Manufacturing steps, equipment, properties, tests and troubleshooting have not been reviewed for this product. A specific technical reference is required.")) }
-        item { Panel(tr("السلامة الصناعية", "Industrial safety"), tr("القائمة ليست تعليمات تشغيل. تطبيقات الجهد العالي ومياه الشرب والطب والوقود والأحماض تتطلب مراجعة فنية ونشرات SDS وتحققًا من ملاءمة المنتج قبل العمل.", "This list is not operating guidance. High voltage, drinking water, medical, fuel and acid applications require technical review, SDS and product suitability validation."), Red) }
+        item { Heading(cleanIndustryName(topic.name)) }
+        item { Text(tr("يجري إعداد الدليل المصوّر لهذه الصناعة.", "This industry's illustrated guide is being prepared.")) }
+        item { TextButton(onClick = toggle) { Text(tr(if (favorite) "إزالة من المفضلة" else "حفظ في المفضلة", if (favorite) "Remove favorite" else "Save favorite")) } }
     }
 }
 @Composable private fun ReferenceCard(reference: Reference) {
@@ -205,7 +199,7 @@ internal val LocalArabic = staticCompositionLocalOf { true }
         item { Button(onClick = importPack) { Text(tr("استيراد حزمة عناوين JSON", "Import JSON topic pack")) } }
         item { Text(tr("أضف آلاف العناوين دون تحديث التطبيق. حزم العناوين لا تضيف وصفات أو اعتمادات فنية. الحد 8 ميجابايت؛ صيغة الحزمة موثقة بالمستودع.", "Add thousands of titles without updating the app. Title packs cannot add recipes or technical validations. Limit: 8 MiB; pack format is documented in the repository.")) }
         if (importedCount != null) item { Text(tr("تم استيراد $importedCount بندًا.", "Imported $importedCount records."), color = Green) }
-        item { Panel(tr("متاح دون اتصال", "Available offline"), tr("${topics.size} عنوانًا ونصوصها المنقولة، ${dictionary.size} تعريف للخامات، المفضلة والحاسبات. المستندات الأصلية الكاملة وصور الصفحات غير مرفقة بالتطبيق.", "${topics.size} source titles and transcriptions, ${dictionary.size} material definitions, favorites and calculators. Full original documents and page images are not bundled."), Green) }
+        item { Panel(tr("متاح دون اتصال", "Available offline"), tr("${visualIndustries.size} دليل مصوّر و${topics.size} اسم صناعة، ${dictionary.size} تعريف للخامات، المفضلة والحاسبات. المستندات الأصلية الكاملة وصور الصفحات غير مرفقة بالتطبيق.", "${visualIndustries.size} illustrated guides and ${topics.size} industry names, ${dictionary.size} material definitions, favorites and calculators. Full original documents and page images are not bundled."), Green) }
         items(topics.groupBy { it.source }.toList()) { (source, entries) -> Panel(source, tr("${entries.size} بندًا — مصدر قائمة عناوين غير محققة.", "${entries.size} entries — unverified source-title list.")) }
         item { ReferenceCard(hotMeltReference) }
         items(dictionary) { ReferenceCard(it.reference) }
