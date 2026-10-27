@@ -1,38 +1,48 @@
 package com.fgmachines.secrets
 
 import android.os.Bundle
+import org.json.JSONObject
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.CompositionLocalProvider
 
-data class Topic(val name: String, val group: String)
-val initialTopics = listOf(
-    Topic("غراء المكبس", "الغراء واللواصق"),
-    Topic("لاصق السيليكون للأنابيب", "الغراء واللواصق"),
-    Topic("الغراء الحيواني السائل", "الغراء واللواصق"),
-    Topic("لاصق سيليكات الصوديوم", "الغراء واللواصق"),
-    Topic("لاصق الخشب بالمعادن", "الغراء واللواصق"),
-    Topic("لاصق الهوت ميلت", "الغراء واللواصق"),
-    Topic("ورنيش عازل للكابلات الأرضية", "العوازل والكابلات"),
-    Topic("عازل للمحولات عالي الحرارة", "العوازل والكابلات"),
-    Topic("عازل كابلات 11 كيلوفولت", "العوازل والكابلات"),
-    Topic("فوم عازل للحرارة والماء", "العوازل والكابلات"),
-    Topic("أسمنت الأفران الحرارية", "العوازل والكابلات")
+data class Topic(
+    val id: String,
+    val name: String,
+    val group: String,
+    val source: String,
+    val sourceItem: Int,
+    val status: String
 )
+fun parseCatalog(json: String): List<Topic> {
+    val array = JSONObject(json).getJSONArray("topics")
+    return (0 until array.length()).map { index ->
+        val entry = array.getJSONObject(index)
+        Topic(
+            entry.getString("id"),
+            entry.getString("title"),
+            entry.getString("category"),
+            entry.getString("source"),
+            entry.getInt("sourceItem"),
+            entry.getString("status")
+        )
+    }
+}
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val topics = assets.open("catalog.json").bufferedReader(Charsets.UTF_8).use {
+            parseCatalog(it.readText())
+        }
         setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MaterialTheme {
@@ -41,27 +51,44 @@ class MainActivity : ComponentActivity() {
                     Column(Modifier.fillMaxSize().padding(18.dp)) {
                         Text("أسرار الصناعات", style = MaterialTheme.typography.headlineMedium)
                         Text("FG Machines — إدارة علاء محمد")
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(16.dp))
                         if (selected == null) {
-                            OutlinedTextField(query, { query = it }, label = { Text("ابحث عن صناعة أو خامة") }, modifier = Modifier.fillMaxWidth())
+                            Text("فهرس أولي: ${topics.size} موضوعًا — قيد التوثيق")
+                            OutlinedTextField(
+                                value = query,
+                                onValueChange = { query = it },
+                                label = { Text("ابحث عن صناعة أو خامة") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             Spacer(Modifier.height(12.dp))
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(initialTopics.filter { it.name.contains(query, ignoreCase = true) || it.group.contains(query, ignoreCase = true) }) { topic ->
-                                    ElevatedCard(onClick = { selected = topic }, modifier = Modifier.fillMaxWidth()) {
+                                items(topics.filter {
+                                    it.name.contains(query, ignoreCase = true) ||
+                                    it.group.contains(query, ignoreCase = true) ||
+                                    it.id.contains(query, ignoreCase = true)
+                                }, key = { it.id }) { topic ->
+                                    ElevatedCard(
+                                        onClick = { selected = topic },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
                                         Column(Modifier.padding(16.dp)) {
                                             Text(topic.name, style = MaterialTheme.typography.titleMedium)
-                                            Text(topic.group, style = MaterialTheme.typography.bodySmall)
+                                            Text("${topic.id} • ${topic.group}", style = MaterialTheme.typography.bodySmall)
                                         }
                                     }
                                 }
                             }
                         } else {
-                            TextButton(onClick = { selected = null }) { Text("العودة للأقسام") }
-                            Text(selected!!.name, style = MaterialTheme.typography.headlineSmall)
-                            Text("القسم: ${selected!!.group}")
+                            val topic = selected!!
+                            TextButton(onClick = { selected = null }) { Text("رجوع إلى الفهرس") }
+                            Text(topic.name, style = MaterialTheme.typography.headlineSmall)
                             Spacer(Modifier.height(12.dp))
-                            Text("حالة المحتوى: عنوان مستخرج من القائمة المصدرية، وليس تركيبة تصنيع معتمدة.")
-                            Text("ستضاف الخامات والمصادر والمعدات والاختبارات بعد المراجعة الفنية.")
+                            Text("القسم: ${topic.group}")
+                            Text("المرجع: ${topic.source} — البند ${topic.sourceItem}")
+                            Text("الحالة: ${topic.status}")
+                            Spacer(Modifier.height(16.dp))
+                            Text("لم تُنشر تركيبة أو خطوات تصنيع معتمدة لهذا الموضوع بعد.")
+                            Text("تحتاج المواصفات والسلامة والتكلفة واختبارات الجودة إلى مراجعة مصادر متخصصة.")
                         }
                     }
                 }
