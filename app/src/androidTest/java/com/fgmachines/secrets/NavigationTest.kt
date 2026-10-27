@@ -31,9 +31,11 @@ class NavigationTest {
         resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
     }
     private fun scrollTo(text: String): SemanticsNodeInteraction {
-        compose.onNodeWithTag("page").performScrollToNode(hasText(text))
+        if (compose.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag("page").performScrollToNode(hasText(text))
+        }
         compose.waitForIdle()
-        return compose.onNodeWithText(text)
+        return compose.onNodeWithText(text).performScrollTo()
     }
     private fun back() { compose.onNodeWithContentDescription("رجوع").performClick() }
     @Test fun landscapeAndLargerTextRemainNavigable() {
@@ -88,5 +90,6 @@ class NavigationTest {
         compose.waitUntil(5000) { compose.onAllNodesWithText("Settings & about").fetchSemanticsNodes().isNotEmpty() }
         screenshot("07-settings-en")
         compose.onNodeWithText("العربية").performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithText("الإعدادات وحول التطبيق").fetchSemanticsNodes().isNotEmpty() }
     }
 }
