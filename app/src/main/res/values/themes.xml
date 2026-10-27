@@ -1,0 +1,11 @@
+<resources>
+    <color name="icon_background">#07090D</color>
+    <style name="Theme.FGSecrets" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:statusBarColor">#07090D</item>
+        <item name="android:navigationBarColor">#07090D</item>
+        <item name="android:windowBackground">#07090D</item>
+        <item name="android:colorAccent">#43B7FF</item>
+    </style>
+</resources>

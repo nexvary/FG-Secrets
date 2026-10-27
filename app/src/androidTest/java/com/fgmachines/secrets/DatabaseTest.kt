@@ -33,4 +33,22 @@ class DatabaseTest {
             assertTrue(repository.favorites.first().isEmpty())
         } finally { db.close() }
     }
+    @Test fun fileDatabaseReopenRetainsTopicAndMaterialFavorites() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val name = "fg-durability-${java.util.UUID.randomUUID()}.db"
+        var db = Room.databaseBuilder(context, CatalogDatabase::class.java, name).build()
+        try {
+            CatalogRepository(context, db).apply {
+                importCatalog()
+                setFavorite("ADH-001", true)
+                setFavorite("MAT-PVAC", true)
+            }
+            db.close()
+            db = Room.databaseBuilder(context, CatalogDatabase::class.java, name).build()
+            val repository = CatalogRepository(context, db)
+            assertEquals(setOf("ADH-001", "MAT-PVAC"), repository.favorites.first().map { it.key }.toSet())
+            assertEquals(71, repository.topics.first().size)
+        } finally { db.close(); context.deleteDatabase(name) }
+    }
+
 }

@@ -129,6 +129,10 @@ internal val LocalArabic = staticCompositionLocalOf { true }
         item { Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { FilterChip(category.isEmpty(), { category = "" }, { Text(tr("الكل", "All")) }); categories.forEach { c -> FilterChip(category == c, { category = c }, { Text(c) }) } } }
         if (home) item { TextButton(onClick = onTools) { Text(tr("افتح الحاسبات والقاموس والمراجع", "Open calculators, dictionary & references")) } }
         item { Text(tr("النتائج: ${filtered.size}", "Results: ${filtered.size}"), color = Green) }
+        if (home && query.isBlank() && category.isEmpty()) {
+            item { MenuCard(tr("محتوى مميز: دليل الهوت ميلت", "Featured: hot melt guide"), tr("التعريف وأسباب التفحم وملاحظات فحص العيوب", "Overview, char causes and defect observations"), Icons.Default.Info) { onTopic("ADH-019") } }
+            item { MenuCard(tr("آخر الملاحظات: اختيار السيليكون", "Latest notes: silicone selection"), tr("نوع التصلب وتوافق السطح — مراجعة 2026-10-27", "Cure type and substrate compatibility — reviewed 2026-10-27"), Icons.Default.Info) { onTopic("ADH-002") } }
+        }
         if (filtered.isEmpty()) item { Text(tr("لا توجد نتائج مطابقة. جرّب مصطلحًا آخر أو قسم الكل.", "No matching topics. Try another term or All categories.")) }
         items(filtered, key = { it.id }) { t -> TopicCard(t, t.id in favorites, { onTopic(t.id) }, { onFavorite(t.id, t.id !in favorites) }) }
     }

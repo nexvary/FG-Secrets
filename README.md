@@ -28,4 +28,4 @@
 ## الحالة
 الإصدار التجريبي 0.2.0 قيد التحقق: Room، المفضلة، واجهات عربية/إنجليزية، حاسبات الكتلة والتكلفة، ومحتوى تعريفي موثق أولي. الموضوعات الـ71 ما زالت عناوين غير محققة؛ لا توجد وصفات إنتاج معتمدة.
 
-للبناء: Gradle 8.9 + JDK 17 + Android SDK 35، ثم `gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`. اختبارات الجهاز: `gradle :app:connectedDebugAndroidTest`. راجع `docs/DEVELOPMENT_STATE.md` للأدلة والمهام المتبقية.
+للبناء: Gradle 8.9 + JDK 17 + Android SDK 35، ثم `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`. اختبارات الجهاز: `./gradlew :app:connectedDebugAndroidTest`. راجع `docs/DEVELOPMENT_STATE.md` للأدلة والمهام المتبقية.
