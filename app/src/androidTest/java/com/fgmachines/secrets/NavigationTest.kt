@@ -37,11 +37,12 @@ class NavigationTest {
     }
     private fun back() { compose.onNodeWithContentDescription("رجوع").performClick() }
     @Test fun landscapeAndLargerTextRemainNavigable() {
+        compose.waitUntil(15000) { compose.onAllNodesWithText("النتائج: 71").fetchSemanticsNodes().isNotEmpty() }
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         try {
             instrumentation.uiAutomation.executeShellCommand("settings put system font_scale 1.3").close()
             compose.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            compose.waitUntil(15000) { compose.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && compose.onAllNodesWithText("النتائج: 71").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(15000) { compose.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
             compose.onNodeWithText("المزيد", useUnmergedTree = true).performClick()
             scrollTo("الإعدادات وحول التطبيق").performClick()
             compose.onNodeWithContentDescription("رجوع").assertIsDisplayed()
