@@ -50,10 +50,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: |
-            gradle :app:connectedDebugAndroidTest --stacktrace
-            mkdir -p screenshots
-            adb pull /sdcard/Android/data/com.fgmachines.secrets/files/screenshots/. screenshots/
+          script: bash scripts/android-runtime-check.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -62,3 +59,35 @@ jobs:
             screenshots/
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
+  preview-release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/industrial-catalog-foundation'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: FG-Secrets-debug-${{ github.sha }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-15-runtime-evidence
+          path: runtime-evidence
+      - name: Publish verified debug preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mv release/app-debug.apk release/FG-Secrets-0.2.0-debug.apk
+          zip -qr release/android-15-runtime-evidence.zip runtime-evidence
+          cd release
+          sha256sum FG-Secrets-0.2.0-debug.apk > SHA256SUMS.txt
+          tag="preview-0.2.0-${GITHUB_SHA:0:7}"
+          cat > notes.md <<'NOTES'
+          Experimental Android preview built after JVM tests, lint and Android 15 emulator tests passed.
+          This APK is debug-signed. Physical-device testing and production signing remain outstanding.
+          Includes 71 unverified source titles, referenced educational notes, local favorites and arithmetic tools. No validated manufacturing recipes.
+          Debug signing keys may differ between CI runs; a future preview may require uninstalling this build (which removes local app data).
+          NOTES
+          gh release create "$tag" FG-Secrets-0.2.0-debug.apk SHA256SUMS.txt android-15-runtime-evidence.zip --target "$GITHUB_SHA" --title "FG Secrets 0.2.0 — verified debug preview ${GITHUB_SHA:0:7}" --notes-file notes.md --prerelease

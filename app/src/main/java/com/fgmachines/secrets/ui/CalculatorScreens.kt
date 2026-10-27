@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.fgmachines.secrets.domain.*
@@ -19,13 +21,14 @@ import com.fgmachines.secrets.domain.*
     OutlinedTextField(value, change, label = { Text(title) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
 }
 @Composable fun FormulationScreen() {
+    val keyboard = LocalSoftwareKeyboardController.current
     var batch by rememberSaveable { mutableStateOf("") }
     var percentages by rememberSaveable { mutableStateOf(listOf("", "")) }
     var unitName by rememberSaveable { mutableStateOf(MassUnit.KILOGRAM.name) }
     var outputName by rememberSaveable { mutableStateOf(MassUnit.KILOGRAM.name) }
     var result by remember(batch, percentages, unitName, outputName) { mutableStateOf<List<String>?>(null) }
     var invalid by remember(batch, percentages, unitName, outputName) { mutableStateOf(false) }
-    LazyColumn(Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("page").imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text(label("حاسبة الكميات", "Mass calculator"), style = MaterialTheme.typography.headlineSmall) }
         item { Text(label("أداة رياضية لمدخلاتك فقط؛ لا تمثل وصفة موثقة ولا تمنح اعتمادًا للتصنيع. النسب كتلية وليست حجمية. يجب أن يكون مجموعها 100% بالضبط.", "Arithmetic for your inputs, not a referenced recipe or manufacturing approval. Mass percentages only; total must equal exactly 100%.")) }
         item { NumberField(batch, { batch = it }, label("كتلة الدفعة", "Batch mass")) }
@@ -39,6 +42,7 @@ import com.fgmachines.secrets.domain.*
         }
         item { TextButton(onClick = { percentages = percentages + "" }, enabled = percentages.size < 50) { Text(label("إضافة مكون", "Add component")) } }
         item { Button(onClick = {
+            keyboard?.hide()
             try {
                 result = FormulationCalculator.scale(percentages.map(Numbers::parse), Numbers.parse(batch), MassUnit.valueOf(unitName), MassUnit.valueOf(outputName)).map { it.display() }
             } catch (_: IllegalArgumentException) { invalid = true }
@@ -59,15 +63,16 @@ import com.fgmachines.secrets.domain.*
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { MassUnit.entries.forEach { unit -> FilterChip(selected == unit.name, { change(unit.name) }, { Text(unitLabel(unit)) }) } }
 }
 @Composable fun CostScreen() {
+    val keyboard = LocalSoftwareKeyboardController.current
     var values by rememberSaveable { mutableStateOf(listOf("", "0", "0", "0", "0", "", "0", "0")) }
     var result by remember(values) { mutableStateOf<CostResult?>(null) }
     var invalid by remember(values) { mutableStateOf(false) }
     val titles = listOf(label("إجمالي تكلفة الخامات", "Total material cost"), label("أجور التشغيل", "Labor"), label("الطاقة", "Energy"), label("تكلفة العبوات للدفعة", "Batch packaging cost"), label("تكاليف أخرى", "Other costs"), label("كمية الإنتاج قبل الفاقد — وحدة أو كجم", "Output before loss — units or kg"), label("فاقد الإنتاج %", "Output loss %"), label("هامش الربح من سعر البيع %", "Profit margin on selling price %"))
-    LazyColumn(Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("page").imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text(label("حاسبة تكلفة الإنتاج", "Production cost calculator"), style = MaterialTheme.typography.headlineSmall) }
         item { Text(label("أدخل جميع التكاليف بنفس العملة. الفاقد يقلل الكمية القابلة للبيع؛ هامش الربح يحسب من سعر البيع وليس زيادة على التكلفة. الضرائب والشحن تدخل ضمن تكاليف أخرى عند الحاجة.", "Use one currency throughout. Loss reduces saleable output; profit margin is a share of selling price, not a markup. Include taxes and shipping in other costs where needed.")) }
         itemsIndexed(values) { index, value -> NumberField(value, { v -> values = values.toMutableList().also { it[index] = v } }, titles[index]) }
-        item { Button(onClick = { try {
+        item { Button(onClick = { keyboard?.hide(); try {
             val n = values.map(Numbers::parse)
             result = CostCalculator.calculate(CostInput(n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7]))
         } catch (_: IllegalArgumentException) { invalid = true } }, modifier = Modifier.fillMaxWidth()) { Text(label("حساب التكلفة وسعر البيع", "Calculate cost & selling price")) } }

@@ -24,6 +24,8 @@ PR: https://github.com/nexvary/FG-Secrets/pull/1
 - JVM tests for catalog integrity, search, arithmetic and evidence rejection.
 - Android tests for Room repeat import/favorite preservation and UI flows with
   real Android 15 screenshot capture configured in CI.
+- Local JSON title-pack import with validation/preview and transactional updates,
+  so titles can expand without rebuilding the app; no verified recipe imports.
 - Version 0.2.0 debug candidate, no sensitive permissions, backup disabled.
 
 ## Remaining gates

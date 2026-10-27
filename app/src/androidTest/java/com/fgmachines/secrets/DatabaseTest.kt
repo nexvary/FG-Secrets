@@ -20,6 +20,15 @@ class DatabaseTest {
             repository.importCatalog(); repository.setFavorite("ADH-001", true); repository.importCatalog()
             assertEquals(71, repository.topics.first().size)
             assertEquals(listOf(FavoriteEntity("ADH-001")), repository.favorites.first())
+            val first = repository.topics.first().first().topic()
+            repository.importPack(listOf(first.copy(name = "Updated display title")))
+            repository.importCatalog()
+            assertEquals("Updated display title", repository.topics.first().first().name)
+            try {
+                repository.importPack(listOf(first.copy(id = "OTHER-001")))
+                fail("Duplicate source item accepted")
+            } catch (_: IllegalArgumentException) {}
+            assertEquals(71, repository.topics.first().size)
             repository.setFavorite("ADH-001", false)
             assertTrue(repository.favorites.first().isEmpty())
         } finally { db.close() }

@@ -48,3 +48,17 @@ Tested/production status requires a test report reference; sensitive instruction
 additionally require technical approval. No formulation in this release satisfies
 these gates and no manufacturing recipe is bundled. The mass calculator is a
 clearly labeled user-input arithmetic tool and cannot confer reliability status.
+
+### Additional scoped technical notes
+Reviewed 2026-10-27; original Arabic/English paraphrases, not recipes:
+- ADH-007: Titebond product-specific dilution and bare-wood limitations:
+  https://titebond.com/resources/use/glues/faqs
+- ADH-019: Henkel char causes and diagnostic observations for package pop opens:
+  https://next.henkel-adhesives.com/my/en/articles/preventing-hot-melt-adhesive-char.html
+  https://next.henkel-adhesives.com/us/en/articles/troubleshooting-hot-melt-pop-opens.html
+- ADH-011: PQ grade-dependent sodium silicate properties:
+  https://www.pqcorp.com/products/
+- ADH-002: WACKER neutral/acetoxy substrate distinction:
+  https://www.wacker.com/h/en-eg/medias/1026-EN.pdf
+These notes have their own references and do not upgrade topic or formulation
+reliability. No product-specific processing limits are generalized.

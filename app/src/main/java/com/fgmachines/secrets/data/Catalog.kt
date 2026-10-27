@@ -20,5 +20,7 @@ fun parseCatalog(json: String): List<Topic> {
     require(topics.map { it.id }.distinct().size == topics.size) { "Duplicate topic ID" }
     require(topics.map { it.source to it.sourceItem }.distinct().size == topics.size) { "Duplicate source item" }
     require(topics.all { it.id.isNotBlank() && it.name.isNotBlank() && it.group.isNotBlank() && it.source.isNotBlank() && it.originalText.isNotBlank() && it.sourceItem > 0 }) { "Incomplete topic" }
+    require(topics.size <= 20000) { "Catalog too large" }
+    require(topics.all { it.id.matches(Regex("[A-Z0-9][A-Z0-9-]{0,63}")) && it.name.length <= 1000 && it.originalText.length <= 20000 && it.status == "عنوان أولي — غير محقق" }) { "Invalid title record or unsupported reliability claim" }
     return topics
 }

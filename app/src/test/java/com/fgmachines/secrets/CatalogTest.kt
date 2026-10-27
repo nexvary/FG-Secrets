@@ -34,5 +34,13 @@ class CatalogTest {
         root.put("schemaVersion", 99)
         try { parseCatalog(root.toString()); fail("Unsupported schema accepted") } catch (_: IllegalArgumentException) {}
     }
+    @Test fun titlePacksCannotUpgradeReliabilityOrUseUnsafeIds() {
+        val root = JSONObject(json())
+        root.getJSONArray("topics").getJSONObject(0).put("status", "Production Validated")
+        try { parseCatalog(root.toString()); fail("Reliability claim accepted") } catch (_: IllegalArgumentException) {}
+        val other = JSONObject(json())
+        other.getJSONArray("topics").getJSONObject(0).put("id", "../../bad")
+        try { parseCatalog(other.toString()); fail("Invalid ID accepted") } catch (_: IllegalArgumentException) {}
+    }
     @Test fun emptyCatalogIsSafe() { assertTrue(parseCatalog("{\"schemaVersion\":2,\"topics\":[]}").isEmpty()) }
 }

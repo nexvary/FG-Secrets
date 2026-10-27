@@ -13,7 +13,9 @@ data class FavoriteEntity(@PrimaryKey val key: String)
 @Dao
 interface CatalogDao {
     @Query("SELECT * FROM topics ORDER BY id") fun observeTopics(): Flow<List<TopicEntity>>
+    @Query("SELECT * FROM topics") suspend fun allTopics(): List<TopicEntity>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertTopics(topics: List<TopicEntity>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedTopics(topics: List<TopicEntity>)
     @Query("SELECT * FROM favorites ORDER BY `key`") fun observeFavorites(): Flow<List<FavoriteEntity>>
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun addFavorite(favorite: FavoriteEntity)
     @Query("DELETE FROM favorites WHERE `key` = :key") suspend fun removeFavorite(key: String)
@@ -34,9 +36,18 @@ class CatalogRepository(private val context: Context, private val db: CatalogDat
     suspend fun importCatalog() {
         val topics = context.assets.open("catalog.json").bufferedReader(Charsets.UTF_8).use { parseCatalog(it.readText()) }
         db.withTransaction {
-            db.catalog().upsertTopics(topics.map { TopicEntity(it.id, it.name, it.group, it.source, it.sourceItem, it.status, it.originalText, it.originalNotes) })
+            db.catalog().seedTopics(topics.map { it.entity() })
         }
     }
+    suspend fun importPack(topics: List<Topic>) {
+        db.withTransaction {
+            val incoming = topics.map { it.id }.toSet()
+            val combined = db.catalog().allTopics().filter { it.id !in incoming }.map { it.topic() } + topics
+            require(combined.map { it.source to it.sourceItem }.distinct().size == combined.size) { "Source item already assigned to another topic" }
+            db.catalog().upsertTopics(topics.map { it.entity() })
+        }
+    }
+    private fun Topic.entity() = TopicEntity(id, name, group, source, sourceItem, status, originalText, originalNotes)
     suspend fun setFavorite(key: String, enabled: Boolean) {
         if (enabled) db.catalog().addFavorite(FavoriteEntity(key)) else db.catalog().removeFavorite(key)
     }

@@ -1,5 +1,7 @@
 package com.fgmachines.secrets.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -15,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,12 +50,20 @@ internal val LocalArabic = staticCompositionLocalOf { true }
     val favorites by vm.favorites.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val loading by vm.loading.collectAsStateWithLifecycle()
+    val pendingPack by vm.pendingPack.collectAsStateWithLifecycle()
+    val importedCount by vm.importedCount.collectAsStateWithLifecycle()
+    val packPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewPack(uri) }
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "home"
     val root = route in listOf("home", "industries", "favorites", "tools")
     CompositionLocalProvider(LocalArabic provides (language == "ar"), LocalLayoutDirection provides if (language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr) {
         MaterialTheme(colorScheme = darkColorScheme(primary = Blue, secondary = Gold, background = Black, surface = Color(0xFF141A24), onSurface = Color(0xFFF1F4FA), onBackground = Color.White, error = Red)) {
+            pendingPack?.let { pack -> AlertDialog(onDismissRequest = vm::cancelImport,
+                title = { Text(tr("استيراد حزمة عناوين", "Import topic pack")) },
+                text = { Text(tr("${pack.size} بندًا غير محقق. سيتم تحديث الأرقام المتطابقة وإضافة الجديدة مع الاحتفاظ بالمفضلة. اختر الحزم من مصدر تعرفه؛ نجاح الاستيراد لا يثبت صحة المحتوى.", "${pack.size} unverified records. Matching IDs will be updated, new IDs added, and favorites retained. Use a known source; successful import does not validate content.")) },
+                confirmButton = { TextButton(onClick = vm::confirmImport) { Text(tr("استيراد", "Import")) } },
+                dismissButton = { TextButton(onClick = vm::cancelImport) { Text(tr("إلغاء", "Cancel")) } }) }
             Scaffold(
                 topBar = { TopAppBar(title = { Column {
                     Text(tr("أسرار الصناعات", "FG Secrets"), style = MaterialTheme.typography.titleLarge)
@@ -85,7 +96,7 @@ internal val LocalArabic = staticCompositionLocalOf { true }
                         composable("dictionary") { DictionaryScreen(favorites, vm::favorite) }
                         composable("formulation") { FormulationScreen() }
                         composable("cost") { CostScreen() }
-                        composable("library") { LibraryScreen(topics) }
+                        composable("library") { LibraryScreen(topics, importedCount) { packPicker.launch(arrayOf("application/json", "text/plain")) } }
                         composable("settings") { SettingsScreen(language, vm::language) }
                     }
                 }
@@ -95,7 +106,7 @@ internal val LocalArabic = staticCompositionLocalOf { true }
 }
 
 @Composable private fun Page(content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
-    LazyColumn(Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    LazyColumn(Modifier.fillMaxSize().testTag("page").imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
 }
 @Composable private fun Heading(text: String) { Text(text, style = MaterialTheme.typography.headlineSmall, color = Gold) }
 @Composable private fun Panel(title: String, text: String, color: Color = Silver) {
@@ -141,6 +152,11 @@ internal val LocalArabic = staticCompositionLocalOf { true }
             item { Panel(tr("معلومة مرجعية عن الهوت ميلت", "Referenced hot melt overview"), tr("تُطبق اللواصق الحرارية في الحالة المنصهرة ويتكون الربط الأولي عند التبريد. بعض الأنواع التفاعلية تتصلب لاحقًا بتفاعل كيميائي. لا يحدد عنوان القائمة نوع البوليمر أو وصفة المنتج.", "Hot melt adhesives are applied molten and form an initial bond on cooling. Reactive types may subsequently cure chemically. The source title does not identify a polymer or a product formulation."), Green) }
             item { ReferenceCard(hotMeltReference) }
         }
+        knowledgeNotes[topic.id]?.forEach { note ->
+            item { Panel(tr(note.titleAr, note.titleEn), tr(note.textAr, note.textEn), Green) }
+            item { Text(tr("ملاحظة موثقة بمصدر منشور — لا تعني اختبار المنتج الوارد بالقائمة.", "Literature-referenced note — the source-list product has not been tested."), color = Green) }
+            item { ReferenceCard(note.reference) }
+        }
         item { Panel(tr("المواد الخام والتركيبة", "Raw materials & formulation"), tr("لا توجد نسب موثقة لهذا البند بعد. لا تُستنتج الخامات أو النسب من العنوان.", "No documented percentages yet. Ingredients and ratios cannot be inferred from a title.")) }
         item { Panel(tr("المراحل والمعدات والجودة", "Process, equipment & quality"), tr("لم تُراجع خطوات التصنيع والمعدات والخصائص والاختبارات والأخطاء الشائعة لهذا المنتج. يلزم مرجع فني محدد قبل نشرها.", "Manufacturing steps, equipment, properties, tests and troubleshooting have not been reviewed for this product. A specific technical reference is required.")) }
         item { Panel(tr("السلامة الصناعية", "Industrial safety"), tr("القائمة ليست تعليمات تشغيل. تطبيقات الجهد العالي ومياه الشرب والطب والوقود والأحماض تتطلب مراجعة فنية ونشرات SDS وتحققًا من ملاءمة المنتج قبل العمل.", "This list is not operating guidance. High voltage, drinking water, medical, fuel and acid applications require technical review, SDS and product suitability validation."), Red) }
@@ -167,9 +183,12 @@ internal val LocalArabic = staticCompositionLocalOf { true }
         items(materials, key = { it.id }) { m -> MaterialCard(m, m.id in favorites, { toggle(m.id, m.id !in favorites) }) }
     }
 }
-@Composable private fun LibraryScreen(topics: List<Topic>) {
+@Composable private fun LibraryScreen(topics: List<Topic>, importedCount: Int?, importPack: () -> Unit) {
     Page {
         item { Heading(tr("المكتبة الصناعية", "Industrial library")) }
+        item { Button(onClick = importPack) { Text(tr("استيراد حزمة عناوين JSON", "Import JSON topic pack")) } }
+        item { Text(tr("أضف آلاف العناوين دون تحديث التطبيق. حزم العناوين لا تضيف وصفات أو اعتمادات فنية. الحد 8 ميجابايت؛ صيغة الحزمة موثقة بالمستودع.", "Add thousands of titles without updating the app. Title packs cannot add recipes or technical validations. Limit: 8 MiB; pack format is documented in the repository.")) }
+        if (importedCount != null) item { Text(tr("تم استيراد $importedCount بندًا.", "Imported $importedCount records."), color = Green) }
         item { Panel(tr("متاح دون اتصال", "Available offline"), tr("${topics.size} عنوانًا ونصوصها المنقولة، ${dictionary.size} تعريف للخامات، المفضلة والحاسبات. المستندات الأصلية الكاملة وصور الصفحات غير مرفقة بالتطبيق.", "${topics.size} source titles and transcriptions, ${dictionary.size} material definitions, favorites and calculators. Full original documents and page images are not bundled."), Green) }
         items(topics.groupBy { it.source }.toList()) { (source, entries) -> Panel(source, tr("${entries.size} بندًا — مصدر قائمة عناوين غير محققة.", "${entries.size} entries — unverified source-title list.")) }
         item { ReferenceCard(hotMeltReference) }

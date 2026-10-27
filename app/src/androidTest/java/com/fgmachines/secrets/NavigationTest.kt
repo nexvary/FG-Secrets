@@ -18,6 +18,10 @@ class NavigationTest {
         File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
     }
+    private fun scrollTo(text: String): SemanticsNodeInteraction {
+        compose.onNodeWithTag("page").performScrollToNode(hasText(text))
+        return compose.onNodeWithText(text)
+    }
     private fun back() { compose.onNodeWithContentDescription("رجوع").performClick() }
     @Test fun searchFavoriteNavigationCalculatorsAndLanguage() {
         compose.waitUntil(15000) { compose.onAllNodesWithText("النتائج: 71").fetchSemanticsNodes().isNotEmpty() }
@@ -25,9 +29,9 @@ class NavigationTest {
         compose.onNodeWithText("ابحث بالاسم أو المصطلح أو الرقم").performTextInput("ADH-001")
         compose.onNodeWithText("النتائج: 1").assertExists()
         compose.onNodeWithText("تصنيع غراء المكبس").performClick()
-        compose.onNodeWithText("النص الأصلي المنقول").assertExists()
+        scrollTo("النص الأصلي المنقول").assertIsDisplayed()
         screenshot("02-topic-ar")
-        compose.onNodeWithText("حفظ في المفضلة").performClick()
+        scrollTo("حفظ في المفضلة").performClick()
         back()
         compose.onNodeWithText("المفضلة", useUnmergedTree = true).performClick()
         compose.onNodeWithText("تصنيع غراء المكبس").assertExists()
@@ -35,22 +39,22 @@ class NavigationTest {
         compose.onNodeWithText("المزيد", useUnmergedTree = true).performClick()
         screenshot("04-tools-ar")
         compose.onNodeWithText("حاسبة الكميات").performClick()
-        compose.onNodeWithText("كتلة الدفعة").performTextInput("١٠")
-        compose.onNodeWithText("نسبة المكون 1 %").performTextInput("٢٥")
-        compose.onNodeWithText("نسبة المكون 2 %").performTextInput("٧٥")
-        compose.onNodeWithText("حساب الكميات").performScrollTo().performClick()
-        compose.onNodeWithText("المكون 1: 2.5 كجم").performScrollTo().assertIsDisplayed()
+        scrollTo("كتلة الدفعة").performTextInput("١٠")
+        scrollTo("نسبة المكون 1 %").performTextInput("٢٥")
+        scrollTo("نسبة المكون 2 %").performTextInput("٧٥")
+        scrollTo("حساب الكميات").performClick()
+        scrollTo("المكون 1: 2.5 كجم").assertIsDisplayed()
         screenshot("05-calculator-ar")
         back()
         compose.onNodeWithText("حاسبة تكلفة الإنتاج").performClick()
         compose.onNodeWithText("إجمالي تكلفة الخامات").performTextInput("100")
-        compose.onNodeWithText("كمية الإنتاج قبل الفاقد — وحدة أو كجم").performScrollTo().performTextInput("100")
-        compose.onNodeWithText("هامش الربح من سعر البيع %").performScrollTo().performTextReplacement("20")
-        compose.onNodeWithText("حساب التكلفة وسعر البيع").performScrollTo().performClick()
-        compose.onNodeWithText("سعر البيع المحسوب للوحدة: 1.25").performScrollTo().assertIsDisplayed()
+        scrollTo("كمية الإنتاج قبل الفاقد — وحدة أو كجم").performTextInput("100")
+        scrollTo("هامش الربح من سعر البيع %").performTextReplacement("20")
+        scrollTo("حساب التكلفة وسعر البيع").performClick()
+        scrollTo("سعر البيع المحسوب للوحدة: 1.25").assertIsDisplayed()
         screenshot("06-cost-ar")
         back()
-        compose.onNodeWithText("الإعدادات وحول التطبيق").performScrollTo().performClick()
+        scrollTo("الإعدادات وحول التطبيق").performClick()
         compose.onNodeWithText("English").performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("Settings & about").fetchSemanticsNodes().isNotEmpty() }
         screenshot("07-settings-en")
