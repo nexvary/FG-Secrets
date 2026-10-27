@@ -19,9 +19,19 @@ only; their text is not the public educational content.
   Perfume and metal-care content is explicitly not published yet.
 
 ## Validation for this change
-Pending CI and emulator execution. The previous version's passing checks below
-do not verify this redesign. Do not present the previous APK as the corrected app.
-Save/share system-picker round trips and visual image quality need runtime review.
+Source commit: 1df414a2abba9b68255ee6e9df18d0cbe87ac465.
+CI https://github.com/nexvary/FG-Secrets/actions/runs/40559607453 succeeded:
+real APK build, JVM tests, lint and five Android 15 emulator tests.
+The new test renders each published guide, encodes PNG, decodes it and verifies dimensions.
+Eight actual UI screenshots were collected; they have NOT been visually reviewed
+in this session. Native document-picker save and external share round trips have
+NOT been verified. No physical-device test was performed.
+Release: https://github.com/nexvary/FG-Secrets/releases/tag/preview-0.2.0-1df414a
+APK: https://github.com/nexvary/FG-Secrets/releases/download/preview-0.2.0-1df414a/FG-Secrets-0.2.0-debug.apk
+This preview still reports version 0.2.0; distinguish it by the source-hash tag.
+It is debug-signed and is an initial product-direction correction, not a completed
+encyclopedia or a visually approved release. Signature/checksum were not independently
+rechecked locally in this session. Do not substitute the historical APK below.
 Only two educational images exist; no complete manufacturing recipes are claimed.
 
 ## Next work
